@@ -3,6 +3,7 @@ import 'package:in_home/data/WallRepository.dart';
 import 'package:in_home/models/AppState.dart';
 import 'package:in_home/models/Wall.dart';
 import 'package:in_home/routes.dart';
+import 'package:in_home/widgets/RoomWidget.dart';
 
 class InHomeApp extends StatefulWidget {
 
