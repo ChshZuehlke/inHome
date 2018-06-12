@@ -77,6 +77,7 @@ class SimpleCoordinateModel extends CoordinateModel {
 
   double _checkOrientation(double value) {
     var newValue = value;
+
     if (_isDeviceCoordinateInverted) {
       newValue = 1.0 - newValue;
     }
@@ -84,6 +85,7 @@ class SimpleCoordinateModel extends CoordinateModel {
     if (_isWorldCoordinateInverted) {
       newValue = 1.0 - newValue;
     }
+
     return newValue;
   }
 }

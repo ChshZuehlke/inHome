@@ -6,12 +6,12 @@ import 'package:in_home/models/Wall.dart';
 class WallRepositoryMock implements WallRepository{
 
   var predefinedWalls = new Stream.fromIterable([
-    Wall(1,1,1,3),
-    Wall(1,3,3,3),
-    Wall(3,3,2,5),
-    Wall(3,5,7,5),
-    Wall(7,5,7,1),
-    Wall(7,1,1,1)
+    Wall(1.0,1.0,1.0,3.0),
+    Wall(1.0,3.0,3.0,3.0),
+    Wall(3.0,3.0,3.0,5.0),
+    Wall(3.0,5.0,7.0,5.0),
+    Wall(7.0,5.0,7.0,1.0),
+    Wall(7.0,1.0,1.0,1.0)
   ]
   );
 
