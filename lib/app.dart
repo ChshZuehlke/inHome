@@ -6,7 +6,6 @@ import 'package:in_home/routes.dart';
 import 'package:in_home/widgets/RoomWidget.dart';
 
 class InHomeApp extends StatefulWidget {
-
   final WallRepository wallRepository;
 
   InHomeApp({@required this.wallRepository});
@@ -16,7 +15,6 @@ class InHomeApp extends StatefulWidget {
 }
 
 class InHomeState extends State<InHomeApp> {
-
   AppState appState = AppState.loading();
 
   @override
@@ -45,13 +43,9 @@ class InHomeState extends State<InHomeApp> {
       ),
       routes: {
         InHomeRoutes.home: (context) {
-          return RoomWidget(
-            appState: appState
-          );
+          return RoomWidget(appState: appState);
         }
       },
     );
   }
-
-
 }
