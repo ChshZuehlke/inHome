@@ -6,6 +6,7 @@ import 'package:in_home/math/SimpleCoordinateModel.dart';
 import 'package:in_home/models/AppState.dart';
 import 'package:after_layout/after_layout.dart';
 import 'package:in_home/models/Wall.dart';
+import 'package:in_home/widgets/WallScannerWidget.dart';
 import 'dart:math';
 
 class RoomWidget extends StatefulWidget {
@@ -31,6 +32,18 @@ class RoomState extends State<RoomWidget> with AfterLayoutMixin<RoomWidget> {
     return new Scaffold(
         appBar: new AppBar(
           title: const Text('InHome'),
+          actions: <Widget>[new IconButton(
+              icon: new Icon(Icons.format_paint),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) {
+                      return WallScannerWidget(
+                      );
+                    },
+                  ),
+                );
+              })]
         ),
         body: Stack(
           fit: StackFit.expand,
