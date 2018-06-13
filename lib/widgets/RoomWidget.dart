@@ -197,7 +197,7 @@ class LightPainter extends CustomPainter {
       radius: shaderRadius,
     );
 
-    final Gradient gradient = RadialGradient(
+    final RadialGradient gradient = RadialGradient(
       colors: <Color>[Colors.pinkAccent[100].withAlpha(195), Colors.transparent],
       tileMode: TileMode.mirror
     );
