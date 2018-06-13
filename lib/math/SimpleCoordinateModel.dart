@@ -36,10 +36,6 @@ class SimpleCoordinateModel extends CoordinateModel {
   bool isWorldCoordinateInverted() => _isWorldCoordinateInverted;
 
   @override
-  double screenToWorld(int screen) =>
-      _normalizedToWorld(_checkOrientation(_screenToNormalized(screen)));
-
-  @override
   void setDeviceCoordinateInverted(bool inverted) {
     _isDeviceCoordinateInverted = inverted;
   }
@@ -62,6 +58,10 @@ class SimpleCoordinateModel extends CoordinateModel {
 
   @override
   int worldToScreen(double world) => _normalizedToScreen(_checkOrientation(_worldToNormalized(world)));
+
+  @override
+  double screenToWorld(int screen) =>
+      _normalizedToWorld(_checkOrientation(_screenToNormalized(screen)));
 
   double _screenToNormalized(int screenSize) =>
       (screenSize.toDouble() / (this._screenSize - 1.0));
