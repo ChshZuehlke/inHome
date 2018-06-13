@@ -5,7 +5,7 @@ import 'package:in_home/data/WallRepositoryMock.dart';
 void main() {
   runApp(
     InHomeApp(
-      wallRepository: WallRepositoryMock(),
+      homeRepository: HomeRepositoryMock(),
     ),
   );
 }
