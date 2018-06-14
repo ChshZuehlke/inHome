@@ -7,3 +7,7 @@
 build/
 
 .flutter-plugins
+.idea/workspace.xml
+ios/Podfile
+ios/Podfile.lock
+ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
