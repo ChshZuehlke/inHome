@@ -54,23 +54,10 @@ class InHomeState extends State<InHomeApp> {
         InHomeRoutes.home: (context) {
           return RoomWidget(
             appState: appState,
-            selectLight: selectLight,
-            clearLightSelection: clearLightSelection,
           );
         }
       },
     );
   }
 
-  void clearLightSelection() {
-    setState(() {
-      appState.selectedLight = null;
-    });
-  }
-
-  void selectLight(Light light) {
-    setState(() {
-      appState.selectedLight = light;
-    });
-  }
 }

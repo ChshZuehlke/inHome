@@ -9,6 +9,7 @@ import 'package:in_home/models/Light.dart';
 import 'package:in_home/models/Wall.dart';
 import 'package:in_home/widgets/room/LightPainter.dart';
 import 'package:in_home/widgets/room/RoomPainter.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
 
 class RoomWidget extends StatefulWidget {
@@ -16,16 +17,16 @@ class RoomWidget extends StatefulWidget {
   final Function selectLight;
   final Function clearLightSelection;
 
-  RoomWidget(
-      {@required this.appState,
-      @required this.selectLight,
-      @required this.clearLightSelection});
+  RoomWidget({@required this.appState});
 
   @override
   State<StatefulWidget> createState() => RoomState();
 }
 
 class RoomState extends State<RoomWidget> with AfterLayoutMixin<RoomWidget> {
+  Color pickerColor;
+  ValueChanged<Color> onColorChanged;
+
   CoordinateModel _xCoordinateModel = SimpleCoordinateModel.empty();
   CoordinateModel _yCoordinateModel = SimpleCoordinateModel.empty()
     ..setDeviceCoordinateInverted(true)
@@ -37,52 +38,123 @@ class RoomState extends State<RoomWidget> with AfterLayoutMixin<RoomWidget> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        appBar: new AppBar(
-          title: const Text('InHome'),
-        ),
-        body: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            new RepaintBoundary(
-              // We don't want our room layer to be redrawn every frame.
-              child: new CustomPaint(
-                painter: RoomPainter(_xCoordinateModel, _yCoordinateModel,
-                    widget.appState.walls),
-                size: Size(_xCoordinateModel.getScreenScreenSize().toDouble(),
-                    _yCoordinateModel.getScreenScreenSize().toDouble()),
-                isComplex: true,
-                willChange: false,
+      appBar: new AppBar(
+        title: const Text('InHome'),
+        actions: <Widget>[
+          selectedLight != null
+              ? new IconButton(
+                  icon: new Icon(Icons.delete),
+                  onPressed: () => _handleLightDelete(),
+                )
+              : new Container(),
+          selectedLight != null
+              ? new IconButton(
+                  icon: new Icon(Icons.color_lens),
+                  onPressed: () {
+                    pickerColor =
+                        selectedLight != null ? selectedLight.lightColor : null;
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return new AlertDialog(
+                          title: const Text('Choose light color'),
+                          content: new SingleChildScrollView(
+                            child: new ColorPicker(
+                              pickerColor: pickerColor,
+                              onColorChanged: _changeColor,
+                              colorPickerWidth: 1000.0,
+                              pickerAreaHeightPercent: 0.7,
+                            ),
+                          ),
+                          actions: <Widget>[
+                            new FlatButton(
+                              child: new Text('Assign'),
+                              onPressed: () {
+                                setState(() {
+                                  selectedLight.lightColor = pickerColor;
+                                });
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                )
+              : new Container(),
+        ],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          new RepaintBoundary(
+            // We don't want our room layer to be redrawn every frame.
+            child: new CustomPaint(
+              painter: RoomPainter(
+                  _xCoordinateModel, _yCoordinateModel, widget.appState.walls),
+              size: Size(_xCoordinateModel.getScreenScreenSize().toDouble(),
+                  _yCoordinateModel.getScreenScreenSize().toDouble()),
+              isComplex: true,
+              willChange: false,
+            ),
+          ),
+          new Listener(
+            onPointerDown: _handlePointClick,
+            onPointerMove: _handlePointMove,
+            onPointerUp: _handlePointUp,
+            child: new CustomPaint(
+              key: _paintKey,
+              painter: new LightPainter(selectedLight, _xCoordinateModel,
+                  _yCoordinateModel, widget.appState),
+              child: new ConstrainedBox(
+                constraints: new BoxConstraints.expand(),
               ),
             ),
-            new Listener(
-              onPointerDown: _handleMouseClick,
-              onPointerMove: _handleMouseMoveEvent,
-              onPointerUp: _handleMouseRelease,
-              child: new CustomPaint(
-                key: _paintKey,
-                painter: new LightPainter(selectedLight, _xCoordinateModel,
-                    _yCoordinateModel, widget.appState),
-                child: new ConstrainedBox(
-                  constraints: new BoxConstraints.expand(),
-                ),
-              ),
-            )
-            // Placeholder for the "LightPainter"
-          ],
-        ));
+          ),
+          // Placeholder for the "LightPainter"
+        ],
+      ),
+      floatingActionButton: new FloatingActionButton(
+          elevation: 0.0,
+          child: new Icon(Icons.add),
+          backgroundColor: Theme.of(context).accentColor,
+          onPressed: () => _handleAddLight()),
+    );
   }
 
-  _handleMouseRelease(PointerEvent event){
+  _changeColor(Color color) {
+    pickerColor = color;
+  }
+
+  _handleLightDelete() {
+    setState(() {
+      widget.appState.lights.remove(selectedLight);
+      selectedLight = null;
+    });
+  }
+
+  _handleAddLight() {
+    double centerX = _xCoordinateModel.getWorldRange() / 2.0;
+    double centerY = _yCoordinateModel.getWorldRange() / 2.0;
+    Light light = Light(centerX, centerY, 255,
+        Colors.primaries[Random().nextInt(Colors.primaries.length)]);
+    setState(() {
+      widget.appState.lights.add(light);
+    });
+  }
+
+  _handlePointUp(PointerEvent event) {
+    /*
     if(selectedLight != null){
       setState(() {
-        print("Release");
         selectedLight = null;
       });
     }
+    */
   }
 
-  _handleMouseMoveEvent(PointerEvent event) {
-    print("movce");
+  _handlePointMove(PointerEvent event) {
     RenderBox referenceBox = _paintKey.currentContext.findRenderObject();
     Offset localMousePosition = referenceBox.globalToLocal(event.position);
     if (selectedLight != null) {
@@ -96,7 +168,7 @@ class RoomState extends State<RoomWidget> with AfterLayoutMixin<RoomWidget> {
     }
   }
 
-  _handleMouseClick(PointerEvent event) {
+  _handlePointClick(PointerEvent event) {
     RenderBox referenceBox = _paintKey.currentContext.findRenderObject();
     Offset localMousePosition = referenceBox.globalToLocal(event.position);
     Light newSelectedLight = null;

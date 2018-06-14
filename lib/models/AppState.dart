@@ -5,7 +5,6 @@ class AppState {
   bool isLoading;
   List<Wall> walls;
   List<Light> lights;
-  Light selectedLight;
 
   AppState({
     this.isLoading = false,

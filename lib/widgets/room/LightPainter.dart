@@ -14,35 +14,31 @@ class LightPainter extends CustomPainter {
   CoordinateModel _yCoordinateModel;
   final AppState appState;
 
-  LightPainter(this.selectedLight, this._xCoordinateModel, this._yCoordinateModel,
-      this.appState);
+  LightPainter(this.selectedLight, this._xCoordinateModel,
+      this._yCoordinateModel, this.appState);
 
   @override
   void paint(Canvas canvas, Size size) {
-
-
-    print(appState.lights.length);
     for (var light in appState.lights) {
-
       double lightCenterX =
-      _xCoordinateModel.worldToScreen(light.xPos.toDouble()).toDouble();
+          _xCoordinateModel.worldToScreen(light.xPos.toDouble()).toDouble();
       double lightCenterY =
-      _yCoordinateModel.worldToScreen(light.yPos.toDouble()).toDouble();
-      if(lightCenterX.isInfinite || lightCenterX.isNaN || lightCenterY.isNaN || lightCenterY.isInfinite){
+          _yCoordinateModel.worldToScreen(light.yPos.toDouble()).toDouble();
+      if (lightCenterX.isInfinite ||
+          lightCenterX.isNaN ||
+          lightCenterY.isNaN ||
+          lightCenterY.isInfinite) {
         continue;
       }
       double shaderRadius = size.width / 2;
       final Rect rect = new Rect.fromCircle(
-        center: Offset(lightCenterX,lightCenterY),
+        center: Offset(lightCenterX, lightCenterY),
         radius: shaderRadius,
       );
 
-
-      final Gradient gradient = RadialGradient(colors: <Color>[
-        light.lightColor.withAlpha(195),
-        Colors.transparent
-      ], tileMode: TileMode.mirror);
-
+      final Gradient gradient = RadialGradient(
+          colors: <Color>[light.lightColor, Colors.transparent],
+          tileMode: TileMode.mirror);
 
       Paint lightPaint = Paint()
         ..color = Colors.white.withAlpha(225)
@@ -50,25 +46,18 @@ class LightPainter extends CustomPainter {
         ..shader = gradient.createShader(rect);
 
       Path mask = _createMask(lightCenterX, lightCenterY, shaderRadius);
-
+      lightPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, 5.0);
+      lightPaint.blendMode = BlendMode.plus;
       canvas.drawPath(mask, lightPaint);
-
-      // Draw an indicator for the hightlighted light
-      if(light == selectedLight){
-        Paint hightlightPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke;
-        canvas.drawCircle(Offset(lightCenterX,lightCenterY), 10.0, hightlightPaint);
-      }
     }
   }
 
   @override
   bool shouldRepaint(LightPainter oldDelegate) {
-    print("LightPainter shouldRepaint: ${selectedLight != oldDelegate.selectedLight}");
+    print("LightPainter shouldRepaint: ${selectedLight !=
+        oldDelegate.selectedLight}");
     //return selectedLight != oldDelegate.selectedLight;
     return true;
-
   }
 
   Offset getProjectedLineIntersection(
@@ -88,7 +77,7 @@ class LightPainter extends CustomPainter {
     Path mask = Path();
     //Add the circle to the exact position
     mask.addOval(new Rect.fromCircle(
-      center: Offset(lx,ly),
+      center: Offset(lx, ly),
       radius: radius,
     ));
     for (var wall in appState.walls) {
