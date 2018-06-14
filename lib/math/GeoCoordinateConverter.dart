@@ -37,14 +37,14 @@ class GeoCoordinateConverter {
     List<WallPoint> normalizedWps = _normalizeWallPoints(wallpoints);
 
     for (WallPoint wp in normalizedWps){
-      SimplePoint p1 = coordToPoint(wp.firstCoord);
-      SimplePoint p2 = coordToPoint(wp.secondCoord);
+      SimplePoint p1 = _coordToPoint(wp.firstCoord);
+      SimplePoint p2 = _coordToPoint(wp.secondCoord);
       lines.add(new SimpleLine(p1, p2));
     }
     return lines;
   }
   
-  SimplePoint coordToPoint (MobileCoordinate coord){
+  SimplePoint _coordToPoint (MobileCoordinate coord){
     double x = coord.longitude*_lonlen;
     double y = coord.latitude*_latlen;
     

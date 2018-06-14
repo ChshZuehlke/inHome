@@ -1,13 +1,35 @@
 import 'package:in_home/math/SimpleLine.dart';
 import 'package:in_home/math/SimplePoint.dart';
 import 'package:in_home/models/Wall.dart';
+import 'dart:math';
 
 class WallCreator {
 
   List<SimpleLine> lines;
-  List<Wall> _walls = new List();
+  List<Wall> walls = new List();
 
   WallCreator(this.lines);
+
+  buildWalls(){
+
+    for (int i = 0; i < lines.length; i++){
+      for (int j = i+1; j< lines.length; j++){
+        SimplePoint intersection = _findValidIntersection(lines[i], lines[j]);
+        if (intersection!= null){
+          _addValidIntersection(lines[i], intersection);
+          _addValidIntersection(lines[j], intersection);
+        }
+      }
+    }
+
+    for (SimpleLine line in lines){
+      Wall wall = new Wall(line.delimiterOne.x, line.delimiterOne.y, line.delimiterTwo.x, line.delimiterTwo.y);
+      print("Added wall: ${line.delimiterOne.x}, ${line.delimiterOne.y}, ${line.delimiterTwo.x}, ${line.delimiterTwo.y}");
+      walls.add(wall);
+    }
+
+  }
+
 
 
   SimplePoint _findValidIntersection(SimpleLine line1, SimpleLine line2) {
@@ -30,11 +52,7 @@ class WallCreator {
         (y1 - y2) * (x3 * y4 - y3 * x4)) / _denominator(line1, line2);
 
     SimplePoint intersection = new SimplePoint(intersectionX, intersectionY);
-    if (_intersectionIsValid(line1, intersection) &&
-        _intersectionIsValid(line2, intersection)) {
-      return intersection;
-    }
-    return null;
+    return intersection;
   }
 
   bool _linesAreParallel(SimpleLine line1, SimpleLine line2) {
@@ -53,35 +71,72 @@ class WallCreator {
     return ((x1 - x2) * (y3 - y4)) - ((y1 - y2) * (x3 - x4));
   }
 
+
   /**
    * An Intersection is valid if:
-   * (pre)Condition1: the intersection point is not between the original measure points AND
-   * Condition2: For all previous intersections:
-   *    one measured point is between intersection and prev intersection OR
-   *    (measured point it not between intersection and prev intersection AND
-   *    intersection is between prev intersection  and one measure point -> update prev intersection)
+   * (pre)Condition1: the intersection point is not between the original measure points
+   * Condition2: no delimiter exists: The Intersection can be added
+   * Condition3: only one delimiter exists:
+   *      The intersection is between the existing delimiter and a measuredPoint: replace existing delimiter
+   *      OR the measured point is between the existing delim and intersection: add new delimiter
+   * Condition 4 two delimiter exist
+   *    intersection is between the measured point and one of the existing delimiters: this delimiter is replaced
    *
    */
-  bool _intersectionIsValid(SimpleLine line1, SimplePoint intersection) {
+  bool _addValidIntersection(SimpleLine line1, SimplePoint intersection) {
+    //Condition1
+    if (_isBetween(intersection, line1.p1, line1.p2)) {
+      return false;
+    }
+
+    SimplePoint measuredPoint = line1.p1;
+
+    //Condition2
+    if(line1.delimiterOne == null && line1.delimiterTwo == null){
+      line1.delimiterOne = intersection;
+      return true;
+    }
+
+    //Condition3
+    if (line1.delimiterOne != null && line1.delimiterTwo == null){
+      if (_isBetween(intersection, measuredPoint, line1.delimiterOne)){
+        line1.delimiterOne = intersection;
+        return true;
+      }
+      if (_isBetween(measuredPoint, line1.delimiterOne, intersection)){
+        line1.delimiterTwo = intersection;
+        return true;
+      }
+    }
+
+    //Condition4
+    if (line1.delimiterOne != null && line1.delimiterTwo != null){
+      if (_isBetween(intersection, measuredPoint, line1.delimiterOne)){
+        line1.delimiterOne = intersection;
+        return true;
+      }
+      if (_isBetween(intersection, measuredPoint, line1.delimiterTwo)){
+        line1.delimiterTwo = intersection;
+        return true;
+      }
+    }
+
     return false;
   }
 
   bool _isBetween(SimplePoint between, SimplePoint p1, SimplePoint p2) {
-
-    return false;
+    double d1 = _distance(between, p1);
+    double d2 = _distance(between, p2);
+    double d3 = _distance(p1, p2);
+    return (d1+d2) == d3;
   }
 
-  void _removeIntersectionPoint(SimplePoint toBeRemoved, SimpleLine line) {
-    if (line.delimiterOne == toBeRemoved) {
-      line.delimiterOne = null;
-    }
-    if (line.delimiterTwo == toBeRemoved) {
-      line.delimiterTwo = null;
-    }
+  double _distance(SimplePoint p1, SimplePoint p2){
+    return sqrt( pow((p2.x - p1.x),2) + pow((p2.y-p1.y),2) );
   }
 
-  double _distance(SimplePoint point1, SimplePoint point2){
-    return null;
-  }
+
+
+
 }
 

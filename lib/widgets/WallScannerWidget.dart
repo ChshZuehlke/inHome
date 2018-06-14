@@ -4,6 +4,9 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:in_home/models/WallPoint.dart';
 import 'package:in_home/models/MobileCoordinate.dart';
+import 'package:in_home/math/GeoCoordinateConverter.dart';
+import 'package:in_home/math/WallCreator.dart';
+import 'package:in_home/math/SimpleLine.dart';
 
 class WallScannerWidget extends StatefulWidget{
   @override
@@ -29,6 +32,14 @@ class _WallScannerState extends State<WallScannerWidget>{
   }
 
   void _finishMeasuring(){
+    GeoCoordinateConverter converter = new GeoCoordinateConverter(_wallPoints.first.firstCoord.latitude);
+    List<SimpleLine> lines = converter.convertToSimpleLine(_wallPoints);
+    WallCreator wallCreator = new WallCreator(lines);
+    wallCreator.buildWalls();
+    wallCreator.walls;
+    setState(() {
+
+    });
     print("finish Measuring, calculate walls");
   }
 
