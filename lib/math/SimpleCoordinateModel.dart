@@ -2,14 +2,14 @@ import 'package:in_home/math/CoordinateModel.dart';
 
 class SimpleCoordinateModel extends CoordinateModel {
 
-  int _screenSize;
+  double _screenSize;
   double _worldMin;
   double _worldMax;
   bool _isDeviceCoordinateInverted;
   bool _isWorldCoordinateInverted;
 
   SimpleCoordinateModel(
-      [this._screenSize = 0,
+      [this._screenSize = 0.0,
       this._worldMin = 0.0,
       this._worldMax = 0.0,
       this._isDeviceCoordinateInverted = false,
@@ -18,7 +18,7 @@ class SimpleCoordinateModel extends CoordinateModel {
   factory SimpleCoordinateModel.empty() => SimpleCoordinateModel();
 
   @override
-  int getScreenScreenSize() => _screenSize;
+  double getScreenScreenSize() => _screenSize;
 
   @override
   double getWordMin() => _worldMin;
@@ -41,7 +41,7 @@ class SimpleCoordinateModel extends CoordinateModel {
   }
 
   @override
-  void setScreenSize(int screenSize) {
+  void setScreenSize(double screenSize) {
     _screenSize = screenSize;
   }
 
@@ -57,20 +57,20 @@ class SimpleCoordinateModel extends CoordinateModel {
   }
 
   @override
-  int worldToScreen(double world) => _normalizedToScreen(_checkOrientation(_worldToNormalized(world)));
+  double worldToScreen(double world) => _normalizedToScreen(_checkOrientation(_worldToNormalized(world)));
 
   @override
-  double screenToWorld(int screen) =>
+  double screenToWorld(double screen) =>
       _normalizedToWorld(_checkOrientation(_screenToNormalized(screen)));
 
-  double _screenToNormalized(int screenSize) =>
+  double _screenToNormalized(double screenSize) =>
       (screenSize.toDouble() / (this._screenSize - 1.0));
 
   double _worldToNormalized(double worldValue) =>
       ((worldValue - _worldMin) / (_worldMax - _worldMin));
 
-  int _normalizedToScreen(double normalizedValue) =>
-      (normalizedValue * (_screenSize - 1.0)).toInt();
+  double _normalizedToScreen(double normalizedValue) =>
+      (normalizedValue * (_screenSize - 1.0));
 
   double _normalizedToWorld(double normalizedValue) =>
       (normalizedValue * (_worldMax - _worldMin) + _worldMin);

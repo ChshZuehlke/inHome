@@ -3,8 +3,8 @@ import 'dart:ui';
 import 'package:quiver/core.dart';
 
 class Light {
-  int xPos;
-  int yPos;
+  double xPos;
+  double yPos;
   int brightness;
   Color lightColor;
 

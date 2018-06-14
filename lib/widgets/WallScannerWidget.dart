@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:in_home/models/AppState.dart';
 import 'package:location/location.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
@@ -9,6 +10,10 @@ import 'package:in_home/math/WallCreator.dart';
 import 'package:in_home/math/SimpleLine.dart';
 
 class WallScannerWidget extends StatefulWidget{
+  final AppState appState;
+
+  WallScannerWidget({@required this.appState});
+
   @override
   _WallScannerState createState() => new _WallScannerState();
 }
@@ -36,11 +41,11 @@ class _WallScannerState extends State<WallScannerWidget>{
     List<SimpleLine> lines = converter.convertToSimpleLine(_wallPoints);
     WallCreator wallCreator = new WallCreator(lines);
     wallCreator.buildWalls();
-    wallCreator.walls;
     setState(() {
-
+      widget.appState.walls= wallCreator.walls;
     });
     print("finish Measuring, calculate walls");
+    Navigator.pop(context);
   }
 
   _deleteWallPoint(WallPoint wp){

@@ -14,6 +14,7 @@ class WallCreator {
 
     for (int i = 0; i < lines.length; i++){
       for (int j = i+1; j< lines.length; j++){
+        print("intersect line $i with $j");
         SimplePoint intersection = _findValidIntersection(lines[i], lines[j]);
         if (intersection!= null){
           _addValidIntersection(lines[i], intersection);
@@ -23,6 +24,13 @@ class WallCreator {
     }
 
     for (SimpleLine line in lines){
+      print("hello");
+      if (line.delimiterOne == null){
+        print("Warning: No delimiter 1 found");
+        line.delimiterOne = line.p1;}
+      if (line.delimiterTwo == null){
+        print("Warning: No delimiter 2 found");
+        line.delimiterTwo = line.p2;}
       Wall wall = new Wall(line.delimiterOne.x, line.delimiterOne.y, line.delimiterTwo.x, line.delimiterTwo.y);
       print("Added wall: ${line.delimiterOne.x}, ${line.delimiterOne.y}, ${line.delimiterTwo.x}, ${line.delimiterTwo.y}");
       walls.add(wall);
@@ -41,10 +49,10 @@ class WallCreator {
     double y1 = line1.p1.y;
     double x2 = line1.p2.x;
     double y2 = line1.p2.y;
-    double x3 = line1.p1.x;
-    double y3 = line1.p1.y;
-    double x4 = line1.p2.x;
-    double y4 = line1.p2.y;
+    double x3 = line2.p1.x;
+    double y3 = line2.p1.y;
+    double x4 = line2.p2.x;
+    double y4 = line2.p2.y;
 
     double intersectionX = ((x1 * y2 - y1 * x2) * (x3 - x4) -
         (x1 - x2) * (x3 * y4 - y3 * x4)) / _denominator(line1, line2);
@@ -64,10 +72,10 @@ class WallCreator {
     double y1 = line1.p1.y;
     double x2 = line1.p2.x;
     double y2 = line1.p2.y;
-    double x3 = line1.p1.x;
-    double y3 = line1.p1.y;
-    double x4 = line1.p2.x;
-    double y4 = line1.p2.y;
+    double x3 = line2.p1.x;
+    double y3 = line2.p1.y;
+    double x4 = line2.p2.x;
+    double y4 = line2.p2.y;
     return ((x1 - x2) * (y3 - y4)) - ((y1 - y2) * (x3 - x4));
   }
 
@@ -86,6 +94,7 @@ class WallCreator {
   bool _addValidIntersection(SimpleLine line1, SimplePoint intersection) {
     //Condition1
     if (_isBetween(intersection, line1.p1, line1.p2)) {
+
       return false;
     }
 
@@ -128,7 +137,10 @@ class WallCreator {
     double d1 = _distance(between, p1);
     double d2 = _distance(between, p2);
     double d3 = _distance(p1, p2);
-    return (d1+d2) == d3;
+    print("is between: d1+d2 = ${d1+d2}, d3 = $d3");
+    double diff = (d1+d2) -d3;
+    print("diff: $diff");
+    return (diff < 0.1 && diff > -0.1);
   }
 
   double _distance(SimplePoint p1, SimplePoint p2){

@@ -1,7 +1,7 @@
 abstract class CoordinateModel{
 
-  int getScreenScreenSize();
-  void setScreenSize(int screenSize);
+  double getScreenScreenSize();
+  void setScreenSize(double screenSize);
 
   bool isDeviceCoordinateInverted();
   void setDeviceCoordinateInverted(bool inverted);
@@ -14,6 +14,6 @@ abstract class CoordinateModel{
   double getWorldRange();
   void setWorldRange(double worldMin, double worldMax);
 
-  double screenToWorld(int screen);
-  int worldToScreen(double world);
+  double screenToWorld(double screen);
+  double worldToScreen(double world);
 }

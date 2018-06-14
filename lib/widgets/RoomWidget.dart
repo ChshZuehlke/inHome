@@ -5,12 +5,18 @@ import 'package:in_home/math/CoordinateModel.dart';
 import 'package:in_home/math/SimpleCoordinateModel.dart';
 import 'package:in_home/models/AppState.dart';
 import 'package:after_layout/after_layout.dart';
+import 'package:in_home/models/Light.dart';
 import 'package:in_home/models/Wall.dart';
 import 'package:in_home/widgets/WallScannerWidget.dart';
+import 'package:in_home/widgets/room/LightPainter.dart';
+import 'package:in_home/widgets/room/RoomPainter.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
 
 class RoomWidget extends StatefulWidget {
   final AppState appState;
+  final Function selectLight;
+  final Function clearLightSelection;
 
   RoomWidget({@required this.appState});
 
@@ -19,75 +25,208 @@ class RoomWidget extends StatefulWidget {
 }
 
 class RoomState extends State<RoomWidget> with AfterLayoutMixin<RoomWidget> {
+  Color pickerColor;
+  ValueChanged<Color> onColorChanged;
+
   CoordinateModel _xCoordinateModel = SimpleCoordinateModel.empty();
   CoordinateModel _yCoordinateModel = SimpleCoordinateModel.empty()
     ..setDeviceCoordinateInverted(true)
     ..setWorldCoordinateInverted(true);
 
   GlobalKey _paintKey = new GlobalKey();
-  Offset _offset;
+  Light selectedLight;
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        appBar: new AppBar(
-          title: const Text('InHome'),
-          actions: <Widget>[new IconButton(
-              icon: new Icon(Icons.format_paint),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) {
-                      return WallScannerWidget(
-                      );
-                    },
-                  ),
-                );
-              })]
-        ),
-        body: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            new RepaintBoundary(
-              // We don't want our room layer to be redrawn every frame.
-              child: new CustomPaint(
-                painter: RoomPainter(_xCoordinateModel, _yCoordinateModel,
-                    widget.appState.walls),
-                size: Size(_xCoordinateModel.getScreenScreenSize().toDouble(),
-                    _yCoordinateModel.getScreenScreenSize().toDouble()),
-                isComplex: true,
-                willChange: false,
+      appBar: new AppBar(
+        title: const Text('InHome'),
+        actions: <Widget>[
+          new IconButton(icon: new Icon(Icons.format_paint), onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) {
+                  return WallScannerWidget(appState: widget.appState);
+                },
+              ),
+            );
+          },),
+          selectedLight != null
+              ? new IconButton(
+                  icon: new Icon(Icons.delete),
+                  onPressed: () => _handleLightDelete(),
+                )
+              : new Container(),
+          selectedLight != null
+              ? new IconButton(
+                  icon: new Icon(Icons.color_lens),
+                  onPressed: () {
+                    pickerColor =
+                        selectedLight != null ? selectedLight.lightColor : null;
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return new AlertDialog(
+                          title: const Text('Choose light color'),
+                          content: new SingleChildScrollView(
+                            child: new ColorPicker(
+                              pickerColor: pickerColor,
+                              onColorChanged: _changeColor,
+                              colorPickerWidth: 1000.0,
+                              pickerAreaHeightPercent: 0.7,
+                            ),
+                          ),
+                          actions: <Widget>[
+                            new FlatButton(
+                              child: new Text('Assign'),
+                              onPressed: () {
+                                setState(() {
+                                  selectedLight.lightColor = pickerColor;
+                                });
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                )
+              : new Container(),
+        ],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          new RepaintBoundary(
+            // We don't want our room layer to be redrawn every frame.
+            child: new CustomPaint(
+              painter: RoomPainter(
+                  _xCoordinateModel, _yCoordinateModel, widget.appState.walls),
+              size: Size(_xCoordinateModel.getScreenScreenSize().toDouble(),
+                  _yCoordinateModel.getScreenScreenSize().toDouble()),
+              isComplex: true,
+              willChange: false,
+            ),
+          ),
+          new Listener(
+            onPointerDown: _handlePointClick,
+            onPointerMove: _handlePointMove,
+            onPointerUp: _handlePointUp,
+            child: new CustomPaint(
+              key: _paintKey,
+              painter: new LightPainter(selectedLight, _xCoordinateModel,
+                  _yCoordinateModel, widget.appState),
+              child: new ConstrainedBox(
+                constraints: new BoxConstraints.expand(),
               ),
             ),
-            new Listener(
-              onPointerDown: _updateOffset,
-              onPointerMove: _updateOffset,
-              child: new CustomPaint(
-                key: _paintKey,
-                painter: new LightPainter(_offset, _xCoordinateModel,
-                    _yCoordinateModel, widget.appState.walls),
-                child: new ConstrainedBox(
-                  constraints: new BoxConstraints.expand(),
-                ),
-              ),
-            )
-            // Placeholder for the "LightPainter"
-          ],
-        ));
+          ),
+          // Placeholder for the "LightPainter"
+        ],
+      ),
+      floatingActionButton: new FloatingActionButton(
+          elevation: 0.0,
+          child: new Icon(Icons.add),
+          backgroundColor: Theme.of(context).accentColor,
+          onPressed: () => _handleAddLight()),
+    );
   }
 
-  _updateOffset(PointerEvent event) {
-    RenderBox referenceBox = _paintKey.currentContext.findRenderObject();
-    Offset offset = referenceBox.globalToLocal(event.position);
+  _changeColor(Color color) {
+    pickerColor = color;
+  }
+
+  _handleLightDelete() {
     setState(() {
-      _offset = offset;
+      widget.appState.lights.remove(selectedLight);
+      selectedLight = null;
     });
+  }
+
+  _handleAddLight() {
+    double centerX = _xCoordinateModel.getWorldRange() / 2.0;
+    double centerY = _yCoordinateModel.getWorldRange() / 2.0;
+    Light light = Light(centerX, centerY, 255,
+        Colors.primaries[Random().nextInt(Colors.primaries.length)]);
+    setState(() {
+      widget.appState.lights.add(light);
+    });
+  }
+
+  _handlePointUp(PointerEvent event) {
+    /*
+    if(selectedLight != null){
+      setState(() {
+        selectedLight = null;
+      });
+    }
+    */
+  }
+
+  _handlePointMove(PointerEvent event) {
+    RenderBox referenceBox = _paintKey.currentContext.findRenderObject();
+    Offset localMousePosition = referenceBox.globalToLocal(event.position);
+    if (selectedLight != null) {
+      double newX = _xCoordinateModel.screenToWorld(localMousePosition.dx);
+      double newY = _yCoordinateModel.screenToWorld(localMousePosition.dy);
+
+      setState(() {
+        selectedLight.xPos = newX;
+        selectedLight.yPos = newY;
+      });
+    }
+  }
+
+  _handlePointClick(PointerEvent event) {
+    RenderBox referenceBox = _paintKey.currentContext.findRenderObject();
+    Offset localMousePosition = referenceBox.globalToLocal(event.position);
+    Light newSelectedLight = null;
+    for (var light in widget.appState.lights) {
+      double lightCenterX = _xCoordinateModel.worldToScreen(light.xPos);
+      double lightCenterY = _yCoordinateModel.worldToScreen(light.yPos);
+      double radius = 30.0; //  TODO Remove magic number (just for testing)
+
+      if (_isPointInCircle(lightCenterX, lightCenterY, radius,
+          localMousePosition.dx, localMousePosition.dy)) {
+        newSelectedLight = light;
+        break;
+      }
+    }
+
+    if (newSelectedLight != selectedLight) {
+      setState(() {
+        selectedLight = newSelectedLight;
+      });
+    }
+  }
+
+  bool _isInRectangle(double circleCenterX, double circleCenterY, double radius,
+      double mouseX, double mouseY) {
+    return mouseX >= circleCenterX - radius &&
+        mouseX <= circleCenterX + radius &&
+        mouseY >= circleCenterY - radius &&
+        mouseY <= circleCenterY + radius;
+  }
+
+  bool _isPointInCircle(double circleCenterX, double circleCenterY,
+      double radius, double mouseX, double mouseY) {
+    if (_isInRectangle(circleCenterX, circleCenterY, radius, mouseX, mouseY)) {
+      double dx = circleCenterX - mouseX;
+      double dy = circleCenterY - mouseY;
+      dx *= dx;
+      dy *= dy;
+      double distanceSquared = dx + dy;
+      double radiusSquared = radius * radius;
+      return distanceSquared <= radiusSquared;
+    }
+    return false;
   }
 
   @override
   void afterFirstLayout(BuildContext context) {
-    _xCoordinateModel.setScreenSize(context.size.width.toInt());
-    _yCoordinateModel.setScreenSize(context.size.height.toInt());
+    _xCoordinateModel.setScreenSize(context.size.width);
+    _yCoordinateModel.setScreenSize(context.size.height);
     _calculateWorldBoundaries(widget.appState.walls);
     setState(() {
       // We need to trigger a "repaint", therefore we call setState so that the painter gets reinitialised with the correct size.
@@ -106,170 +245,19 @@ class RoomState extends State<RoomWidget> with AfterLayoutMixin<RoomWidget> {
     double xWorldRange = xMax - xMin;
     double yWorldRange = yMax - yMin;
 
-    double xCenter = xWorldRange/2.0;
-    double yCenter = yWorldRange/2.0;
+    double xCenter = xWorldRange / 2.0;
+    double yCenter = yWorldRange / 2.0;
     double zoomFactor = 1.5;
 
     double xZoomRanges = (xMax - xCenter) * zoomFactor;
     double yZoomRanges = (yMax - yCenter) * zoomFactor;
-
 
     xMin = xCenter - xZoomRanges;
     xMax = xCenter + xZoomRanges;
     yMin = yCenter - yZoomRanges;
     yMax = yCenter + yZoomRanges;
 
-    _xCoordinateModel.setWorldRange(xMin,xMax);
-    _yCoordinateModel.setWorldRange(yMin,yMax);
+    _xCoordinateModel.setWorldRange(xMin, xMax);
+    _yCoordinateModel.setWorldRange(yMin, yMax);
   }
-
-}
-
-class RoomPainter extends CustomPainter {
-  final CoordinateModel _xCoordinateModel;
-  final CoordinateModel _yCoordinateModel;
-  final List<Wall> walls;
-
-  RoomPainter(this._xCoordinateModel, this._yCoordinateModel, this.walls);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    drawBackground(canvas);
-    drawWalls(canvas);
-  }
-
-  @override
-  bool shouldRepaint(RoomPainter oldDelegate) {
-    return _xCoordinateModel.getScreenScreenSize() ==
-            oldDelegate._xCoordinateModel.getScreenScreenSize() &&
-        _yCoordinateModel.getScreenScreenSize() ==
-            oldDelegate._yCoordinateModel.getScreenScreenSize();
-  }
-
-  void drawWalls(Canvas canvas) {
-    for (var wall in walls) {
-      final paint = new Paint()
-        ..color = Colors.blueGrey[700]
-        ..strokeWidth = 2.5
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.fill;
-
-      Offset start = Offset(
-          _xCoordinateModel.worldToScreen(wall.xStart).toDouble(),
-          _yCoordinateModel.worldToScreen(wall.yStart).toDouble());
-      Offset end = Offset(_xCoordinateModel.worldToScreen(wall.xEnd).toDouble(),
-          _yCoordinateModel.worldToScreen(wall.yEnd).toDouble());
-
-      canvas.drawLine(start, end, paint);
-    }
-  }
-
-  void drawBackground(Canvas canvas) {
-    final bgPaint = new Paint()..color = Colors.black87;
-    canvas.drawRect(
-        new Rect.fromLTWH(
-          0.0,
-          0.0,
-          _xCoordinateModel.getScreenScreenSize().toDouble(),
-          _yCoordinateModel.getScreenScreenSize().toDouble(),
-        ),
-        bgPaint);
-  }
-}
-
-class LightPainter extends CustomPainter {
-
-  Offset _offSet;
-  CoordinateModel _xCoordinateModel;
-  CoordinateModel _yCoordinateModel;
-  final List<Wall> walls;
-
-  LightPainter(
-      this._offSet, this._xCoordinateModel, this._yCoordinateModel, this.walls);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (_offSet == null) return;
-
-    double shaderRadius = size.width/2 ;
-    final Rect rect = new Rect.fromCircle(
-      center: _offSet,
-      radius: shaderRadius,
-    );
-
-    final RadialGradient gradient = RadialGradient(
-      colors: <Color>[Colors.pinkAccent[100].withAlpha(195), Colors.transparent],
-      tileMode: TileMode.mirror
-    );
-
-    Paint lightPaint = Paint()
-      ..color = Colors.white.withAlpha(225)
-      ..style = PaintingStyle.fill
-      ..shader = gradient.createShader(rect);
-
-    Path mask = _createMask(_offSet.dx, _offSet.dy,shaderRadius);
-    canvas.drawPath(mask, lightPaint);
-  }
-
-  @override
-  bool shouldRepaint(LightPainter oldDelegate) {
-    return _offSet != oldDelegate._offSet;
-  }
-
-
-  Offset getProjectedLineIntersection(double xStart, double yStart, double xEnd, double yEnd,double radius){
-    double vx = xEnd - xStart;
-    double vy = yEnd - yStart;
-    double mag = sqrt(vx*vx+vy*vy);
-    double ux = vx/mag;
-    double uy = vy/mag;
-    return Offset(
-        xStart + ux * radius*10, // TODO remove magic number.
-        yStart + uy * radius*10 // TODO remove magic number.
-    );
-  }
-
-
-  Path _createMask(double lx, double ly, double radius) {
-    Path mask = Path();
-    //Add the circle to the exact position
-    mask.addOval(new Rect.fromCircle(
-      center: _offSet,
-      radius: radius,
-    ));
-    for (var wall in walls) {
-      //4 point needed A, B, C, D
-      //A and B defined in the wall, calculate C and D
-      Offset c = getProjectedLineIntersection(
-          lx,
-          ly,
-          _xCoordinateModel.worldToScreen(wall.xStart).toDouble(),
-          _yCoordinateModel.worldToScreen(wall.yStart).toDouble(),
-        radius
-          );
-      Offset d = getProjectedLineIntersection(
-          lx,
-          ly,
-          _xCoordinateModel.worldToScreen(wall.xEnd).toDouble(),
-          _yCoordinateModel.worldToScreen(wall.yEnd).toDouble(),
-        radius
-          );
-      Path path = Path();
-      //Draw the A, B, C, D quadrilateral into path
-      path.moveTo(_xCoordinateModel.worldToScreen(wall.xStart).toDouble(),
-          _yCoordinateModel.worldToScreen(wall.yStart).toDouble());
-      path.lineTo(_xCoordinateModel.worldToScreen(wall.xEnd).toDouble(),
-          _yCoordinateModel.worldToScreen(wall.yEnd).toDouble());
-
-      path.lineTo(d.dx, d.dy);
-      path.lineTo(c.dx, c.dy);
-      path.lineTo(_xCoordinateModel.worldToScreen(wall.xStart).toDouble(),
-          _yCoordinateModel.worldToScreen(wall.yStart).toDouble());
-      path.close();
-      mask = Path.combine(PathOperation.reverseDifference,path,mask);
-    }
-    return mask;
-  }
-
-
 }

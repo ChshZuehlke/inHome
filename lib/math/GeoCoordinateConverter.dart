@@ -37,6 +37,8 @@ class GeoCoordinateConverter {
     List<WallPoint> normalizedWps = _normalizeWallPoints(wallpoints);
 
     for (WallPoint wp in normalizedWps){
+      print("(${wp.firstCoord.latitude},${wp.firstCoord.longitude})");
+      print("(${wp.secondCoord.latitude},${wp.secondCoord.longitude})");
       SimplePoint p1 = _coordToPoint(wp.firstCoord);
       SimplePoint p2 = _coordToPoint(wp.secondCoord);
       lines.add(new SimpleLine(p1, p2));
@@ -59,6 +61,8 @@ class GeoCoordinateConverter {
     double minLong = double.maxFinite;
 
     for(WallPoint wp in wps){
+      print("(${wp.firstCoord.latitude},${wp.firstCoord.longitude})");
+      print("(${wp.secondCoord.latitude},${wp.secondCoord.longitude})");
       if (wp.firstCoord.latitude<minLat){
         minLat = wp.firstCoord.latitude;
       }
